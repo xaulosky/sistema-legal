@@ -19,7 +19,8 @@
     "express": "^5.1.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "zod": "^4.1.5"
+    "zod": "^4.1.5",
+    "dotenv": "^17.2.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -34,5 +35,7 @@
     "typescript": "^5.9.2",
     "vite": "^7.1.4"
   },
-  "prisma": { "seed": "tsx prisma/seed.ts" }
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
 }
