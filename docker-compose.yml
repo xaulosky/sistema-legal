@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: jurisflow
+      POSTGRES_PASSWORD: jurisflow
+      POSTGRES_DB: jurisflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - jurisflow_pgdata:/var/lib/postgresql/data
+
+volumes:
+  jurisflow_pgdata:
