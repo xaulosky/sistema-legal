@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole { ADMIN LAWYER ASSISTANT BILLING }
+enum MatterStatus { INTAKE ACTIVE ON_HOLD CLOSED }
+enum TaskStatus { TODO DOING DONE CANCELLED }
+enum TaskKind { TASK DEADLINE HEARING }
+
+model Organization {
+  id String @id @default(cuid())
+  name String
+  createdAt DateTime @default(now())
+  users User[]
+  contacts Contact[]
+  matters Matter[]
+}
+
+model User {
+  id String @id @default(cuid())
+  orgId String
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name String
+  email String
+  role UserRole
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  owned Matter[] @relation("MatterOwner")
+  members MatterMember[]
+  tasks Task[]
+  activities Activity[]
+  @@unique([orgId, email])
+}
+
+model Contact {
+  id String @id @default(cuid())
+  orgId String
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name String
+  type String
+  rut String?
+  email String?
+  phone String?
+  status String @default("CLIENT")
+  matters Matter[] @relation("MatterClient")
+  parties MatterParty[]
+  createdAt DateTime @default(now())
+  @@index([orgId, name])
+}
+
+model Matter {
+  id String @id @default(cuid())
+  orgId String
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  code String
+  title String
+  area String
+  summary String?
+  status MatterStatus @default(INTAKE)
+  stage String?
+  priority String @default("MEDIUM")
+  court String?
+  rit String?
+  ruc String?
+  clientId String
+  client Contact @relation("MatterClient", fields: [clientId], references: [id])
+  ownerId String
+  owner User @relation("MatterOwner", fields: [ownerId], references: [id])
+  members MatterMember[]
+  parties MatterParty[]
+  activities Activity[]
+  tasks Task[]
+  documents Document[]
+  charges FeeCharge[]
+  openedAt DateTime @default(now())
+  closedAt DateTime?
+  @@unique([orgId, code])
+  @@index([orgId, status])
+}
+
+model MatterMember {
+  matterId String
+  userId String
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([matterId, userId])
+}
+
+model MatterParty {
+  id String @id @default(cuid())
+  matterId String
+  contactId String
+  role String
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id])
+  @@index([matterId])
+}
+
+model Activity {
+  id String @id @default(cuid())
+  matterId String
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  authorId String
+  author User @relation(fields: [authorId], references: [id])
+  type String
+  title String
+  detail String
+  createdAt DateTime @default(now())
+  @@index([matterId, createdAt])
+}
+
+model Task {
+  id String @id @default(cuid())
+  matterId String
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  assigneeId String
+  assignee User @relation(fields: [assigneeId], references: [id])
+  kind TaskKind
+  status TaskStatus @default(TODO)
+  title String
+  priority String @default("MEDIUM")
+  dueAt DateTime
+  source String?
+  @@index([matterId, dueAt])
+  @@index([assigneeId, status])
+}
+
+model Document {
+  id String @id @default(cuid())
+  matterId String
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  name String
+  category String
+  url String?
+  createdAt DateTime @default(now())
+  @@index([matterId, createdAt])
+}
+
+model FeeCharge {
+  id String @id @default(cuid())
+  matterId String
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  concept String
+  amount Int
+  createdAt DateTime @default(now())
+  payments Payment[]
+  @@index([matterId])
+}
+
+model Payment {
+  id String @id @default(cuid())
+  chargeId String
+  charge FeeCharge @relation(fields: [chargeId], references: [id], onDelete: Cascade)
+  amount Int
+  method String
+  reference String?
+  paidAt DateTime @default(now())
+  @@index([chargeId, paidAt])
+}
